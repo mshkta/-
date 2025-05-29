@@ -103,8 +103,20 @@ export default function DiagnosisGame() {
         <Card>
           <CardContent className="p-4 space-y-2">
             <div>{name}さんのベストとワースト属性を当ててみて！</div>
-            <Input placeholder="ベスト属性" id="quiz-best" />
-            <Input placeholder="ワースト属性" id="quiz-worst" />
+<select id="quiz-best" className="border p-2 rounded w-full">
+  <option value="">選んでください</option>
+  {allOptions.map(opt => (
+    <option key={opt} value={opt}>{opt}</option>
+  ))}
+</select>
+
+<select id="quiz-worst" className="border p-2 rounded w-full">
+  <option value="">選んでください</option>
+  {allOptions.map(opt => (
+    <option key={opt} value={opt}>{opt}</option>
+  ))}
+</select>
+
             <Button onClick={() => {
               const best = document.getElementById("quiz-best").value;
               const worst = document.getElementById("quiz-worst").value;
