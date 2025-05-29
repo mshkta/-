@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 
 const allOptions = [
-  "性転換", "未亡人", "兄弟姦", "親子丼", "３P",
+  "TS", "未亡人", "兄弟姦", "親子丼", "３P",
   "スカ", "オホ声", "体調不良", "無理矢理", "睡眠姦"
 ];
 
@@ -21,6 +23,7 @@ function getAllPairs(arr) {
 const allPairs = getAllPairs(allOptions);
 
 export default function DiagnosisGame() {
+  const router = useRouter();
   const [step, setStep] = useState("input");
   const [name, setName] = useState("");
   const [votes, setVotes] = useState({});
@@ -29,21 +32,14 @@ export default function DiagnosisGame() {
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizStep, setQuizStep] = useState("wait");
 
-  // クエリからクイズ情報を読み込む処理
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("quiz") === "1") {
-      const best = params.get("best");
-      const worst = params.get("worst");
-      const name = params.get("name");
-      if (best && worst && name) {
-        setResult({ best, worst, ranking: [] });
-        setName(name);
-        setQuizStep("quiz");
-        setStep("result");
-      }
+    const { quiz, name, best, worst } = router.query;
+    if (quiz && name && best && worst) {
+      setName(name);
+      setResult({ best, worst });
+      setQuizStep("quiz");
     }
-  }, []);
+  }, [router.query]);
 
   function handleChoice(choice) {
     setVotes(prev => {
@@ -66,8 +62,11 @@ export default function DiagnosisGame() {
     setStep("diagnosis");
   }
 
-  // クイズ用URLの生成
-  const quizUrl = result ? `${window.location.origin}${window.location.pathname}?quiz=1&name=${encodeURIComponent(name)}&best=${encodeURIComponent(result.best)}&worst=${encodeURIComponent(result.worst)}` : "";
+  function handleShare() {
+    const quizURL = \`\${window.location.origin}?quiz=1&name=\${encodeURIComponent(name)}&best=\${encodeURIComponent(result.best)}&worst=\${encodeURIComponent(result.worst)}\`;
+    navigator.clipboard.writeText(quizURL);
+    alert("リンクをコピーしました！");
+  }
 
   return (
     <div className="p-4 space-y-4">
@@ -85,7 +84,7 @@ export default function DiagnosisGame() {
         <Card>
           <CardContent className="p-4 space-y-2">
             <div>{name}さん、どちらが好き？</div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][0])}>{allPairs[pairIndex][0]}</Button>
               <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][1])}>{allPairs[pairIndex][1]}</Button>
             </div>
@@ -102,15 +101,13 @@ export default function DiagnosisGame() {
             <hr />
             <div>ランキング：</div>
             <ol className="list-decimal pl-6">
-              {result.ranking.map(([key, count]) => (
+              {result.ranking.map(([key, count], index) => (
                 <li key={key}>{key}（{count}票）</li>
               ))}
             </ol>
             <div className="pt-4">
               <div>クイズを共有する場合はこのリンクを使ってね：</div>
-              <code>{quizUrl}</code>
-              <Button onClick={() => navigator.clipboard.writeText(quizUrl)}>リンクをコピー</Button>
-              <Button onClick={() => setQuizStep("quiz")}>クイズにする</Button>
+              <Button onClick={handleShare}>リンクをコピー</Button>
             </div>
           </CardContent>
         </Card>
