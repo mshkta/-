@@ -1,10 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 
-const allOptions = ["TS", "未亡人", "兄弟姦", "親子丼", "３P", "スカ", "オホ声", "体調不良", "無理矢理", "睡眠姦"];
+const allOptions = [
+  "TS", "未亡人", "兄弟姦", "親子丼", "３P", "スカ", "オホ声", "体調不良", "無理矢理", "睡眠姦"
+];
 
 function getAllPairs(arr) {
   const pairs = [];
@@ -26,6 +28,18 @@ export default function DiagnosisGame() {
   const [result, setResult] = useState(null);
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizStep, setQuizStep] = useState("wait");
+  const [quizLink, setQuizLink] = useState("");
+
+  useEffect(() => {
+    if (result) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("name", name);
+      url.searchParams.set("best", result.best);
+      url.searchParams.set("worst", result.worst);
+      url.searchParams.set("quiz", "true");
+      setQuizLink(url.toString());
+    }
+  }, [result]);
 
   function handleChoice(choice) {
     setVotes(prev => {
@@ -64,8 +78,10 @@ export default function DiagnosisGame() {
         <Card>
           <CardContent className="p-4 space-y-2">
             <div>{name}さん、どちらが好き？</div>
-            <Button onClick={() => handleChoice(allPairs[pairIndex][0])}>{allPairs[pairIndex][0]}</Button>
-            <Button onClick={() => handleChoice(allPairs[pairIndex][1])}>{allPairs[pairIndex][1]}</Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][0])}>{allPairs[pairIndex][0]}</Button>
+              <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][1])}>{allPairs[pairIndex][1]}</Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -85,7 +101,8 @@ export default function DiagnosisGame() {
             </ol>
             <div className="pt-4">
               <div>クイズを共有する場合はこのリンクを使ってね：</div>
-              <code>{`${window.location.origin}${window.location.pathname}?best=${encodeURIComponent(result.best)}&worst=${encodeURIComponent(result.worst)}&name=${encodeURIComponent(name)}&quiz=1`}</code>
+              <code>{quizLink}</code>
+              <Button onClick={() => navigator.clipboard.writeText(quizLink)}>リンクをコピー</Button>
             </div>
           </CardContent>
         </Card>
