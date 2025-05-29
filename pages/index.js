@@ -6,7 +6,7 @@ import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 
 const allOptions = [
-  "TS", "未亡人", "兄弟姦", "親子丼", "３P",
+  "性転換", "未亡人", "兄弟姦", "親子丼", "３P",
   "スカ", "オホ声", "体調不良", "無理矢理", "睡眠姦"
 ];
 
