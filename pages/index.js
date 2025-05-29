@@ -28,14 +28,22 @@ export default function DiagnosisGame() {
   const [result, setResult] = useState(null);
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizStep, setQuizStep] = useState("wait");
-  const [quizUrl, setQuizUrl] = useState("");
 
+  // クエリからクイズ情報を読み込む処理
   useEffect(() => {
-    if (result) {
-      const url = `${window.location.origin}/?best=${encodeURIComponent(result.best)}&worst=${encodeURIComponent(result.worst)}&name=${encodeURIComponent(name)}`;
-      setQuizUrl(url);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("quiz") === "1") {
+      const best = params.get("best");
+      const worst = params.get("worst");
+      const name = params.get("name");
+      if (best && worst && name) {
+        setResult({ best, worst, ranking: [] });
+        setName(name);
+        setQuizStep("quiz");
+        setStep("result");
+      }
     }
-  }, [result, name]);
+  }, []);
 
   function handleChoice(choice) {
     setVotes(prev => {
@@ -58,6 +66,9 @@ export default function DiagnosisGame() {
     setStep("diagnosis");
   }
 
+  // クイズ用URLの生成
+  const quizUrl = result ? `${window.location.origin}${window.location.pathname}?quiz=1&name=${encodeURIComponent(name)}&best=${encodeURIComponent(result.best)}&worst=${encodeURIComponent(result.worst)}` : "";
+
   return (
     <div className="p-4 space-y-4">
       {step === "input" && (
@@ -74,13 +85,9 @@ export default function DiagnosisGame() {
         <Card>
           <CardContent className="p-4 space-y-2">
             <div>{name}さん、どちらが好き？</div>
-            <div className="flex gap-4">
-              <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][0])}>
-                {allPairs[pairIndex][0]}
-              </Button>
-              <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][1])}>
-                {allPairs[pairIndex][1]}
-              </Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][0])}>{allPairs[pairIndex][0]}</Button>
+              <Button className="flex-1" onClick={() => handleChoice(allPairs[pairIndex][1])}>{allPairs[pairIndex][1]}</Button>
             </div>
           </CardContent>
         </Card>
@@ -95,31 +102,21 @@ export default function DiagnosisGame() {
             <hr />
             <div>ランキング：</div>
             <ol className="list-decimal pl-6">
-              {result.ranking.map(([key, count], index) => (
+              {result.ranking.map(([key, count]) => (
                 <li key={key}>{key}（{count}票）</li>
               ))}
             </ol>
-            <div className="pt-4 space-y-2">
+            <div className="pt-4">
               <div>クイズを共有する場合はこのリンクを使ってね：</div>
-              <div className="flex items-center gap-2">
-                <code className="break-all text-sm">{quizUrl}</code>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(quizUrl);
-                    alert("リンクをコピーしました！");
-                  }}
-                >
-                  リンクをコピー
-                </Button>
-              </div>
+              <code>{quizUrl}</code>
+              <Button onClick={() => navigator.clipboard.writeText(quizUrl)}>リンクをコピー</Button>
+              <Button onClick={() => setQuizStep("quiz")}>クイズにする</Button>
             </div>
-            <Button onClick={() => setQuizStep("quiz")}>クイズにする</Button>
           </CardContent>
         </Card>
       )}
 
-      {quizStep === "quiz" && (
+      {quizStep === "quiz" && result && (
         <Card>
           <CardContent className="p-4 space-y-2">
             <div>{name}さんのベストとワースト属性を当ててみて！</div>
