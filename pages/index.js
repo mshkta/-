@@ -1,8 +1,13 @@
 import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 const allOptions = [
-  "無口", "元気", "ツンデレ", "ヤンデレ", "長身",
-  "小柄", "頭脳明晰", "おバカ", "苦労人", "マイペース"
+  "真面目優等生", "不真面目危険人物", "俺様ナルシスト", "ヘタレ陰キャ",
+  "ツッコミ苦労人", "マイペースなボケ", "猫系美人", "かわいいわんこ系",
+  "温厚癒し系", "腹黒毒舌", "クーデレ", "ヤンデレ", "ツンデレ", "ツンツン",
+  "年上/上司/先輩", "年下/部下/後輩", "童貞", "ビッチ"
 ];
 
 function getAllPairs(arr) {
@@ -17,7 +22,7 @@ function getAllPairs(arr) {
 
 const allPairs = getAllPairs(allOptions);
 
-export default function Home() {
+export default function DiagnosisGame() {
   const [step, setStep] = useState("input");
   const [name, setName] = useState("");
   const [votes, setVotes] = useState({});
@@ -27,18 +32,28 @@ export default function Home() {
   const [quizStep, setQuizStep] = useState("wait");
 
   function handleChoice(choice) {
-    const newVotes = { ...votes, [choice]: (votes[choice] || 0) + 1 };
-    setVotes(newVotes);
-    const nextIndex = pairIndex + 1;
-    if (nextIndex < allPairs.length) {
-      setPairIndex(nextIndex);
-    } else {
-      const sorted = Object.entries(newVotes).sort((a, b) => b[1] - a[1]);
-      const top = sorted[0]?.[0];
-      const bottom = sorted[sorted.length - 1]?.[0];
-      setResult({ best: top, worst: bottom });
-      setStep("result");
-    }
+    setVotes(prev => {
+      const updated = { ...prev, [choice]: (prev[choice] || 0) + 1 };
+      const nextIndex = pairIndex + 1;
+      if (nextIndex < allPairs.length) {
+        setPairIndex(nextIndex);
+      } else {
+        const sorted = Object.entries(updated).sort((a, b) => b[1] - a[1]);
+        const top = sorted[0]?.[0];
+        const bottom = sorted[sorted.length - 1]?.[0];
+        setResult({ best: top, worst: bottom });
+        setStep("result");
+      }
+      return updated;
+    });
+  }
+
+  function handleStart() {
+    setStep("diagnosis");
+  }
+
+  function handleQuizStart() {
+    setQuizStep("quiz");
   }
 
   function checkQuiz(answerBest, answerWorst) {
@@ -47,52 +62,66 @@ export default function Home() {
     setQuizAnswer({ correctBest, correctWorst });
   }
 
+  const quizURL = typeof window !== "undefined" ? `${window.location.href}?best=${encodeURIComponent(result?.best || '')}&worst=${encodeURIComponent(result?.worst || '')}&name=${encodeURIComponent(name)}` : "";
+
   return (
-    <div style={{ padding: "20px" }}>
+    <div className="p-4 space-y-4">
       {step === "input" && (
-        <div>
-          <p>診断者の名前を入力してください：</p>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="名前" />
-          <button onClick={() => setStep("diagnosis")}>診断スタート</button>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div>診断者の名前を入力してください：</div>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="名前" />
+            <Button onClick={handleStart}>診断スタート</Button>
+          </CardContent>
+        </Card>
       )}
 
       {step === "diagnosis" && pairIndex < allPairs.length && (
-        <div>
-          <p>{name}さん、どちらが好き？</p>
-          <button onClick={() => handleChoice(allPairs[pairIndex][0])}>{allPairs[pairIndex][0]}</button>
-          <button onClick={() => handleChoice(allPairs[pairIndex][1])}>{allPairs[pairIndex][1]}</button>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div>{name}さん、どちらが好き？</div>
+            <Button onClick={() => handleChoice(allPairs[pairIndex][0])}>{allPairs[pairIndex][0]}</Button>
+            <Button onClick={() => handleChoice(allPairs[pairIndex][1])}>{allPairs[pairIndex][1]}</Button>
+          </CardContent>
+        </Card>
       )}
 
       {step === "result" && result && quizStep === "wait" && (
-        <div>
-          <h2>診断結果</h2>
-          <p>ベスト属性：{result.best}</p>
-          <p>ワースト属性：{result.worst}</p>
-          <button onClick={() => setQuizStep("quiz")}>この結果をクイズにする</button>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div>診断結果</div>
+            <div>ベスト属性：{result.best}</div>
+            <div>ワースト属性：{result.worst}</div>
+            <div>クイズを共有する場合はこのリンクを送ってください：</div>
+            <div className="break-all text-blue-600 underline">{quizURL}</div>
+            <Button onClick={handleQuizStart}>この結果をクイズにする</Button>
+          </CardContent>
+        </Card>
       )}
 
       {quizStep === "quiz" && (
-        <div>
-          <p>{name}さんのベストとワースト属性を当ててみて！</p>
-          <input placeholder="ベスト属性" id="quiz-best" />
-          <input placeholder="ワースト属性" id="quiz-worst" />
-          <button onClick={() => {
-            const best = document.getElementById("quiz-best").value;
-            const worst = document.getElementById("quiz-worst").value;
-            checkQuiz(best, worst);
-          }}>回答する</button>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div>{name}さんのベストとワースト属性を当ててみて！</div>
+            <Input placeholder="ベスト属性" id="quiz-best" />
+            <Input placeholder="ワースト属性" id="quiz-worst" />
+            <Button onClick={() => {
+              const best = document.getElementById("quiz-best").value;
+              const worst = document.getElementById("quiz-worst").value;
+              checkQuiz(best, worst);
+            }}>回答する</Button>
+          </CardContent>
+        </Card>
       )}
 
       {quizAnswer && (
-        <div>
-          <h3>クイズ結果</h3>
-          <p>ベスト：{quizAnswer.correctBest ? "正解" : `不正解（正解は「${result.best}」）`}</p>
-          <p>ワースト：{quizAnswer.correctWorst ? "正解" : `不正解（正解は「${result.worst}」）`}</p>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div>クイズ結果</div>
+            <div>ベスト：{quizAnswer.correctBest ? "正解" : "不正解（正解は「" + result.best + "」）"}</div>
+            <div>ワースト：{quizAnswer.correctWorst ? "正解" : "不正解（正解は「" + result.worst + "」）"}</div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
