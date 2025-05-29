@@ -6,8 +6,8 @@ import { Card, CardContent } from "../components/ui/card";
 const allOptions = [
   "真面目優等生", "不真面目危険人物", "俺様ナルシスト", "ヘタレ陰キャ", "ツッコミ苦労人",
   "マイペースなボケ", "猫系美人", "かわいいわんこ系", "温厚癒し系", "腹黒毒舌",
-  "クーデレ", "ヤンデレ", "ツンデレ", "ツンツン",
-  "年上/上司/先輩", "年下/部下/後輩", "童貞", "ビッチ"
+  "クーデレ", "ヤンデレ", "ツンデレ", "ツンツン", "年上/上司/先輩",
+  "年下/部下/後輩", "童貞", "ビッチ"
 ];
 
 function getAllPairs(arr) {
@@ -32,35 +32,25 @@ export default function DiagnosisGame() {
   const [quizStep, setQuizStep] = useState("wait");
 
   function handleChoice(choice) {
-    const nextVotes = { ...votes, [choice]: (votes[choice] || 0) + 1 };
-    const nextIndex = pairIndex + 1;
-    setVotes(nextVotes);
-    if (nextIndex < allPairs.length) {
-      setPairIndex(nextIndex);
-    } else {
-      const sorted = Object.entries(nextVotes).sort((a, b) => b[1] - a[1]);
-      const top = sorted[0]?.[0];
-      const bottom = sorted[sorted.length - 1]?.[0];
-      setResult({ best: top, worst: bottom });
-      setStep("result");
-    }
+    setVotes(prev => {
+      const updated = { ...prev, [choice]: (prev[choice] || 0) + 1 };
+      const nextIndex = pairIndex + 1;
+      if (nextIndex < allPairs.length) {
+        setPairIndex(nextIndex);
+      } else {
+        const sorted = Object.entries(updated).sort((a, b) => b[1] - a[1]);
+        const top = sorted[0]?.[0];
+        const bottom = sorted[sorted.length - 1]?.[0];
+        setResult({ best: top, worst: bottom, ranking: sorted });
+        setStep("result");
+      }
+      return updated;
+    });
   }
 
   function handleStart() {
     setStep("diagnosis");
   }
-
-  function handleQuizStart() {
-    setQuizStep("quiz");
-  }
-
-  function checkQuiz(answerBest, answerWorst) {
-    const correctBest = answerBest === result.best;
-    const correctWorst = answerWorst === result.worst;
-    setQuizAnswer({ correctBest, correctWorst });
-  }
-
-  const quizURL = `${typeof window !== "undefined" ? window.location.origin : ""}?name=${encodeURIComponent(name)}&best=${encodeURIComponent(result?.best)}&worst=${encodeURIComponent(result?.worst)}`;
 
   return (
     <div className="p-4 space-y-4">
@@ -88,13 +78,19 @@ export default function DiagnosisGame() {
         <Card>
           <CardContent className="p-4 space-y-2">
             <div>診断結果</div>
-            <div>ベスト属性：{result.best}</div>
-            <div>ワースト属性：{result.worst}</div>
-            <div className="text-sm text-gray-600">
-              クイズを共有する場合はこのリンクをコピーしてね：<br />
-              <a href={quizURL} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">{quizURL}</a>
+            <div><strong>ベスト属性：</strong>{result.best}</div>
+            <div><strong>ワースト属性：</strong>{result.worst}</div>
+            <hr />
+            <div>ランキング：</div>
+            <ol className="list-decimal pl-6">
+              {result.ranking.map(([key, count], index) => (
+                <li key={key}>{key}（{count}票）</li>
+              ))}
+            </ol>
+            <div className="pt-4">
+              <div>クイズを共有する場合はこのリンクを使ってね：</div>
+              <code>{window.location.href}</code>
             </div>
-            <Button onClick={handleQuizStart}>この結果をクイズにする</Button>
           </CardContent>
         </Card>
       )}
@@ -103,22 +99,18 @@ export default function DiagnosisGame() {
         <Card>
           <CardContent className="p-4 space-y-2">
             <div>{name}さんのベストとワースト属性を当ててみて！</div>
-            <select id="quiz-best" className="border rounded p-2 w-full">
-              <option value="">ベスト属性を選んでね</option>
-              {allOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
+            <select id="quiz-best">
+              {allOptions.map(opt => <option key={opt}>{opt}</option>)}
             </select>
-            <select id="quiz-worst" className="border rounded p-2 w-full">
-              <option value="">ワースト属性を選んでね</option>
-              {allOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
+            <select id="quiz-worst">
+              {allOptions.map(opt => <option key={opt}>{opt}</option>)}
             </select>
             <Button onClick={() => {
               const best = document.getElementById("quiz-best").value;
               const worst = document.getElementById("quiz-worst").value;
-              checkQuiz(best, worst);
+              const correctBest = best === result.best;
+              const correctWorst = worst === result.worst;
+              setQuizAnswer({ correctBest, correctWorst });
             }}>回答する</Button>
           </CardContent>
         </Card>
